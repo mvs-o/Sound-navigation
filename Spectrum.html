@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анализатор спектра звука с спектрограммой</title>
+    <title>Анализатор спектра со спектрограммой</title>
     <style>
         * {
             box-sizing: border-box;
@@ -383,4 +383,687 @@
             }
             
             h1 {
-               
+                font-size: 2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .canvas-wrapper {
+                height: 250px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .visualization-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Анализатор спектра со спектрограммой</h1>
+            <p class="subtitle">Частотная характеристика и график частоты во времени (спектрограмма) в реальном времени</p>
+        </header>
+        
+        <div class="controls">
+            <button class="control-btn" id="startBtn">
+                <span>🎤</span> Запуск анализа
+            </button>
+            <button class="control-btn" id="stopBtn" disabled>
+                <span>⏹️</span> Остановить
+            </button>
+            <button class="control-btn" id="clearBtn">
+                <span>🧹</span> Очистить
+            </button>
+            
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">Остановлен</span>
+            </div>
+        </div>
+        
+        <div class="visualization-grid">
+            <!-- Частотная характеристика -->
+            <div class="visualization-container">
+                <div class="visualization-header">
+                    <h2><span>📈</span> Частотная характеристика</h2>
+                    <div class="time-indicator">
+                        <span>⏱️</span> Обновление: <span id="fpsCounter">0</span> FPS
+                    </div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="spectrumCanvas"></canvas>
+                </div>
+                <div class="freq-info">
+                    <span>20 Гц</span>
+                    <span>20 кГц</span>
+                </div>
+            </div>
+            
+            <!-- Спектрограмма -->
+            <div class="visualization-container">
+                <div class="visualization-header">
+                    <h2><span>🕒</span> Спектрограмма (частота vs время)</h2>
+                    <div class="time-indicator">
+                        <span>⏱️</span> Время: <span id="timeCounter">0.0</span> сек
+                    </div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="spectrogramCanvas"></canvas>
+                </div>
+                <div class="spectrogram-controls">
+                    <div class="time-slider-container">
+                        <span>Показать историю:</span>
+                        <input type="range" min="5" max="60" value="30" class="time-slider" id="historySlider">
+                        <div class="time-display">
+                            <span id="historyValue">30</span> секунд
+                        </div>
+                    </div>
+                    <div class="color-scheme-selector">
+                        <span>Цветовая схема:</span>
+                        <div class="color-scheme-btn active" id="colorScheme1" title="Теплая"></div>
+                        <div class="color-scheme-btn" id="colorScheme2" title="Холодная"></div>
+                        <div class="color-scheme-btn" id="colorScheme3" title="Радужная"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-card">
+                <h3><span>📈</span> Пиковая частота</h3>
+                <div class="info-value" id="peakFreq">0 Гц</div>
+                <div class="info-label">Наиболее активная частота</div>
+            </div>
+            
+            <div class="info-card">
+                <h3><span>🔊</span> Уровень громкости</h3>
+                <div class="info-value" id="volumeLevel">0 dB</div>
+                <div class="info-label">Текущий уровень звука</div>
+            </div>
+            
+            <div class="info-card">
+                <h3><span>📊</span> Ширина спектра</h3>
+                <div class="info-value" id="spectrumWidth">0 Гц</div>
+                <div class="info-label">Разброс активных частот</div>
+            </div>
+            
+            <div class="info-card">
+                <h3><span>⏱️</span> Время анализа</h3>
+                <div class="info-value" id="analysisTime">0.0 с</div>
+                <div class="info-label">Продолжительность записи</div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h2>📝 Как использовать</h2>
+            <ul>
+                <li><strong>Левая панель</strong> - мгновенная частотная характеристика (спектр) звука</li>
+                <li><strong>Правая панель</strong> - спектрограмма: изменение частот во времени (новые данные справа)</li>
+                <li>Используйте ползунок для изменения длительности истории на спектрограмме (5-60 секунд)</li>
+                <li>Выберите цветовую схему для спектрограммы (теплая, холодная, радужная)</li>
+                <li>Нажмите "Запуск анализа" для начала захвата звука с микрофона</li>
+                <li>Нажмите "Остановить" для прекращения захвата звука</li>
+                <li>Нажмите "Очистить" для сброса графиков и показателей</li>
+            </ul>
+            
+            <div class="permission-note">
+                ⚠️ Для работы приложения необходим доступ к микрофона. Браузер запросит разрешение при первом запуске.
+                Спектрограмма показывает, как частоты меняются со временем: низкие частоты внизу, высокие - вверху.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Элементы DOM
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const peakFreq = document.getElementById('peakFreq');
+        const volumeLevel = document.getElementById('volumeLevel');
+        const spectrumWidth = document.getElementById('spectrumWidth');
+        const analysisTime = document.getElementById('analysisTime');
+        const fpsCounter = document.getElementById('fpsCounter');
+        const timeCounter = document.getElementById('timeCounter');
+        const historySlider = document.getElementById('historySlider');
+        const historyValue = document.getElementById('historyValue');
+        
+        // Canvas элементы
+        const spectrumCanvas = document.getElementById('spectrumCanvas');
+        const spectrumCtx = spectrumCanvas.getContext('2d');
+        const spectrogramCanvas = document.getElementById('spectrogramCanvas');
+        const spectrogramCtx = spectrogramCanvas.getContext('2d');
+        
+        // Переменные для работы с аудио
+        let audioContext;
+        let analyser;
+        let microphone;
+        let dataArray;
+        let bufferLength;
+        let isRunning = false;
+        let animationId;
+        let startTime = 0;
+        let lastFrameTime = 0;
+        let frameCount = 0;
+        let currentFPS = 60;
+        
+        // Переменные для спектрограммы
+        let spectrogramData = [];
+        let maxHistorySeconds = 30;
+        let currentColorScheme = 1;
+        const COLOR_SCHEMES = {
+            1: ['#000000', '#330000', '#660000', '#990000', '#CC0000', '#FF0000', '#FF3300', '#FF6600', '#FF9900', '#FFCC00', '#FFFF00'],
+            2: ['#000033', '#000066', '#000099', '#0000CC', '#0000FF', '#0033FF', '#0066FF', '#0099FF', '#00CCFF', '#00FFFF', '#FFFFFF'],
+            3: ['#000000', '#400040', '#800080', '#C000C0', '#FF00FF', '#C000FF', '#8000FF', '#4000FF', '#0000FF', '#0040FF', '#0080FF', '#00C0FF', '#00FFFF', '#00FFC0', '#00FF80', '#00FF40', '#00FF00', '#40FF00', '#80FF00', '#C0FF00', '#FFFF00', '#FFC000', '#FF8000', '#FF4000', '#FF0000']
+        };
+        
+        // Цветовые схемы кнопок
+        const colorScheme1 = document.getElementById('colorScheme1');
+        const colorScheme2 = document.getElementById('colorScheme2');
+        const colorScheme3 = document.getElementById('colorScheme3');
+        
+        // Инициализация цветов кнопок
+        colorScheme1.style.background = 'linear-gradient(to right, #000000, #FF0000, #FFFF00)';
+        colorScheme2.style.background = 'linear-gradient(to right, #000033, #0000FF, #FFFFFF)';
+        colorScheme3.style.background = 'linear-gradient(to right, #000000, #FF00FF, #00FFFF, #00FF00, #FFFF00, #FF0000)';
+        
+        // Размеры canvas
+        function resizeCanvas() {
+            spectrumCanvas.width = spectrumCanvas.offsetWidth;
+            spectrumCanvas.height = spectrumCanvas.offsetHeight;
+            spectrogramCanvas.width = spectrogramCanvas.offsetWidth;
+            spectrogramCanvas.height = spectrogramCanvas.offsetHeight;
+        }
+        
+        // Инициализация canvas
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Обновление статуса
+        function updateStatus(isActive) {
+            if (isActive) {
+                statusDot.classList.add('active');
+                statusText.textContent = 'Анализ активен';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else {
+                statusDot.classList.remove('active');
+                statusText.textContent = 'Остановлен';
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+        
+        // Очистка отображения
+        function clearDisplay() {
+            // Очистка спектра
+            spectrumCtx.fillStyle = '#0f172a';
+            spectrumCtx.fillRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
+            
+            // Очистка спектрограммы
+            spectrogramCtx.fillStyle = '#0f172a';
+            spectrogramCtx.fillRect(0, 0, spectrogramCanvas.width, spectrogramCanvas.height);
+            
+            // Очистка данных спектрограммы
+            spectrogramData = [];
+            
+            // Сброс времени
+            startTime = 0;
+            frameCount = 0;
+            currentFPS = 0;
+            
+            // Очистка показателей
+            peakFreq.textContent = '0 Гц';
+            volumeLevel.textContent = '0 dB';
+            spectrumWidth.textContent = '0 Гц';
+            analysisTime.textContent = '0.0 с';
+            fpsCounter.textContent = '0';
+            timeCounter.textContent = '0.0';
+            
+            // Рисуем сетку
+            drawGrid();
+        }
+        
+        // Рисование сетки
+        function drawGrid() {
+            // Сетка для спектра
+            spectrumCtx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+            spectrumCtx.lineWidth = 1;
+            
+            // Вертикальные линии
+            for (let i = 0; i <= 10; i++) {
+                const x = (spectrumCanvas.width / 10) * i;
+                spectrumCtx.beginPath();
+                spectrumCtx.moveTo(x, 0);
+                spectrumCtx.lineTo(x, spectrumCanvas.height);
+                spectrumCtx.stroke();
+            }
+            
+            // Горизонтальные линии
+            for (let i = 0; i <= 5; i++) {
+                const y = (spectrumCanvas.height / 5) * i;
+                spectrumCtx.beginPath();
+                spectrumCtx.moveTo(0, y);
+                spectrumCtx.lineTo(spectrumCanvas.width, y);
+                spectrumCtx.stroke();
+            }
+        }
+        
+        // Расчет FPS
+        function updateFPS() {
+            const now = performance.now();
+            frameCount++;
+            
+            if (now - lastFrameTime >= 1000) {
+                currentFPS = Math.round((frameCount * 1000) / (now - lastFrameTime));
+                fpsCounter.textContent = currentFPS;
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+        }
+        
+        // Запуск анализа звука
+        async function startAnalysis() {
+            try {
+                // Запрашиваем доступ к микрофону
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    }
+                });
+                
+                // Создаем аудиоконтекст
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                // Настройка анализатора
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = 0.8;
+                bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                
+                // Подключаем микрофон к анализатору
+                microphone.connect(analyser);
+                
+                // Начало времени
+                startTime = Date.now();
+                lastFrameTime = performance.now();
+                
+                // Обновляем статус
+                isRunning = true;
+                updateStatus(true);
+                
+                // Запускаем отрисовку
+                draw();
+                
+            } catch (error) {
+                console.error('Ошибка доступа к микрофону:', error);
+                alert('Не удалось получить доступ к микрофону. Пожалуйста, разрешите доступ и попробуйте снова.');
+                updateStatus(false);
+            }
+        }
+        
+        // Остановка анализа
+        function stopAnalysis() {
+            if (isRunning) {
+                isRunning = false;
+                
+                // Останавливаем все треки микрофона
+                if (microphone && microphone.mediaStream) {
+                    microphone.mediaStream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Закрываем аудиоконтекст
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close();
+                }
+                
+                // Останавливаем анимацию
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+                
+                // Обновляем статус
+                updateStatus(false);
+            }
+        }
+        
+        // Добавление данных в спектрограмму
+        function addToSpectrogram(freqData) {
+            // Нормализация данных (берем каждый 4-й элемент для уменьшения разрешения)
+            const normalizedData = [];
+            const step = 4; // Уменьшаем разрешение для производительности
+            for (let i = 0; i < freqData.length; i += step) {
+                let sum = 0;
+                let count = 0;
+                for (let j = 0; j < step && i + j < freqData.length; j++) {
+                    sum += freqData[i + j];
+                    count++;
+                }
+                const avg = sum / count;
+                normalizedData.push(avg / 255); // Нормализуем к 0-1
+            }
+            
+            // Добавляем новые данные
+            spectrogramData.push(normalizedData);
+            
+            // Ограничиваем размер истории
+            const maxDataPoints = maxHistorySeconds * 10; // 10 кадров в секунду для производительности
+            if (spectrogramData.length > maxDataPoints) {
+                spectrogramData = spectrogramData.slice(-maxDataPoints);
+            }
+        }
+        
+        // Рисование спектрограммы
+        function drawSpectrogram() {
+            if (spectrogramData.length === 0) return;
+            
+            const width = spectrogramCanvas.width;
+            const height = spectrogramCanvas.height;
+            const dataHeight = spectrogramData[0].length;
+            
+            // Очистка canvas
+            spectrogramCtx.fillStyle = '#0f172a';
+            spectrogramCtx.fillRect(0, 0, width, height);
+            
+            // Рисование данных
+            const columnWidth = width / spectrogramData.length;
+            const rowHeight = height / dataHeight;
+            
+            for (let x = 0; x < spectrogramData.length; x++) {
+                const columnData = spectrogramData[x];
+                
+                for (let y = 0; y < columnData.length; y++) {
+                    const value = columnData[y];
+                    const color = getColorForValue(value, currentColorScheme);
+                    
+                    spectrogramCtx.fillStyle = color;
+                    spectrogramCtx.fillRect(
+                        width - (x + 1) * columnWidth,
+                        height - (y + 1) * rowHeight,
+                        columnWidth,
+                        rowHeight
+                    );
+                }
+            }
+            
+            // Рисование осей
+            spectrogramCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            spectrogramCtx.lineWidth = 1;
+            
+            // Ось Y (частоты)
+            spectrogramCtx.beginPath();
+            spectrogramCtx.moveTo(0, 0);
+            spectrogramCtx.lineTo(0, height);
+            spectrogramCtx.stroke();
+            
+            // Ось X (время)
+            spectrogramCtx.beginPath();
+            spectrogramCtx.moveTo(0, height - 1);
+            spectrogramCtx.lineTo(width, height - 1);
+            spectrogramCtx.stroke();
+            
+            // Подписи
+            spectrogramCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            spectrogramCtx.font = '12px monospace';
+            spectrogramCtx.textAlign = 'left';
+            
+            // Подписи частот
+            const freqLabels = ['20 кГц', '10 кГц', '5 кГц', '2 кГц', '1 кГц', '500 Гц', '200 Гц', '20 Гц'];
+            for (let i = 0; i < freqLabels.length; i++) {
+                const y = (i / (freqLabels.length - 1)) * height;
+                spectrogramCtx.fillText(freqLabels[i], 5, y);
+            }
+            
+            // Подписи времени
+            spectrogramCtx.textAlign = 'right';
+            if (spectrogramData.length > 1) {
+                const timePoints = 5;
+                for (let i = 0; i <= timePoints; i++) {
+                    const x = (i / timePoints) * width;
+                    const timeValue = (i / timePoints) * maxHistorySeconds;
+                    spectrogramCtx.fillText(`-${(maxHistorySeconds - timeValue).toFixed(1)}с`, x - 5, height - 5);
+                }
+            }
+            
+            // Легенда цветов
+            const legendWidth = 150;
+            const legendHeight = 20;
+            const legendX = width - legendWidth - 10;
+            const legendY = 10;
+            
+            const gradient = spectrogramCtx.createLinearGradient(legendX, legendY, legendX + legendWidth, legendY);
+            const colors = COLOR_SCHEMES[currentColorScheme];
+            for (let i = 0; i < colors.length; i++) {
+                gradient.addColorStop(i / (colors.length - 1), colors[i]);
+            }
+            
+            spectrogramCtx.fillStyle = gradient;
+            spectrogramCtx.fillRect(legendX, legendY, legendWidth, legendHeight);
+            
+            spectrogramCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            spectrogramCtx.strokeRect(legendX, legendY, legendWidth, legendHeight);
+            
+            spectrogramCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            spectrogramCtx.font = '10px monospace';
+            spectrogramCtx.textAlign = 'center';
+            spectrogramCtx.fillText('Тихо', legendX, legendY - 5);
+            spectrogramCtx.fillText('Громко', legendX + legendWidth, legendY - 5);
+        }
+        
+        // Получение цвета для значения
+        function getColorForValue(value, scheme) {
+            const colors = COLOR_SCHEMES[scheme];
+            const index = Math.min(Math.floor(value * (colors.length - 1)), colors.length - 1);
+            return colors[index];
+        }
+        
+        // Рисование спектра
+        function draw() {
+            if (!isRunning) return;
+            
+            animationId = requestAnimationFrame(draw);
+            
+            // Обновление FPS
+            updateFPS();
+            
+            // Обновление времени
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            timeCounter.textContent = elapsedTime.toFixed(1);
+            analysisTime.textContent = elapsedTime.toFixed(1);
+            
+            // Получаем данные частот
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Добавляем данные в спектрограмму
+            addToSpectrogram(dataArray);
+            
+            // Очищаем canvas спектра
+            spectrumCtx.fillStyle = '#0f172a';
+            spectrumCtx.fillRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
+            
+            // Рисуем сетку
+            drawGrid();
+            
+            // Рисуем спектр
+            const barWidth = (spectrumCanvas.width / bufferLength) * 2.5;
+            let barHeight;
+            let x = 0;
+            
+            // Находим пиковые значения
+            let maxValue = 0;
+            let maxIndex = 0;
+            let sum = 0;
+            let count = 0;
+            
+            // Логарифмическое отображение частот
+            for (let i = 0; i < bufferLength; i++) {
+                // Логарифмическое масштабирование частот
+                const logIndex = Math.log(i + 1) / Math.log(bufferLength) * bufferLength;
+                const value = dataArray[Math.floor(logIndex)] || dataArray[i];
+                
+                // Для статистики
+                if (value > maxValue) {
+                    maxValue = value;
+                    maxIndex = i;
+                }
+                if (value > 10) {
+                    sum += value;
+                    count++;
+                }
+                
+                // Рисуем столбец
+                barHeight = (value / 255) * spectrumCanvas.height * 0.9;
+                
+                // Градиентная заливка
+                const gradient = spectrumCtx.createLinearGradient(0, spectrumCanvas.height - barHeight, 0, spectrumCanvas.height);
+                gradient.addColorStop(0, '#22d3ee');
+                gradient.addColorStop(0.7, '#818cf8');
+                gradient.addColorStop(1, '#8b5cf6');
+                
+                spectrumCtx.fillStyle = gradient;
+                spectrumCtx.fillRect(x, spectrumCanvas.height - barHeight, barWidth, barHeight);
+                
+                // Обводка столбца
+                spectrumCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                spectrumCtx.lineWidth = 1;
+                spectrumCtx.strokeRect(x, spectrumCanvas.height - barHeight, barWidth, barHeight);
+                
+                x += barWidth + 1;
+            }
+            
+            // Вычисляем статистику
+            const sampleRate = audioContext?.sampleRate || 44100;
+            const peakFrequency = (maxIndex * sampleRate) / (analyser.fftSize * 2);
+            const avgVolume = count > 0 ? sum / count : 0;
+            const volumeDB = avgVolume > 0 ? 20 * Math.log10(avgVolume / 255) : -100;
+            
+            // Расчет ширины спектра
+            let minActiveFreq = null;
+            let maxActiveFreq = null;
+            
+            for (let i = 0; i < bufferLength; i++) {
+                if (dataArray[i] > 20) {
+                    const freq = (i * sampleRate) / (analyser.fftSize * 2);
+                    if (minActiveFreq === null || freq < minActiveFreq) {
+                        minActiveFreq = freq;
+                    }
+                    if (maxActiveFreq === null || freq > maxActiveFreq) {
+                        maxActiveFreq = freq;
+                    }
+                }
+            }
+            
+            const freqWidth = minActiveFreq !== null && maxActiveFreq !== null ? 
+                Math.round(maxActiveFreq - minActiveFreq) : 0;
+            
+            // Обновляем показатели
+            peakFreq.textContent = `${Math.round(peakFrequency)} Гц`;
+            volumeLevel.textContent = `${volumeDB.toFixed(1)} dB`;
+            spectrumWidth.textContent = `${freqWidth} Гц`;
+            
+            // Рисуем линию пиковой частоты
+            if (peakFrequency > 0) {
+                const peakX = (Math.log(peakFrequency / 20) / Math.log(20000 / 20)) * spectrumCanvas.width;
+                
+                spectrumCtx.beginPath();
+                spectrumCtx.moveTo(peakX, 0);
+                spectrumCtx.lineTo(peakX, spectrumCanvas.height);
+                spectrumCtx.strokeStyle = '#fbbf24';
+                spectrumCtx.lineWidth = 2;
+                spectrumCtx.setLineDash([5, 5]);
+                spectrumCtx.stroke();
+                spectrumCtx.setLineDash([]);
+                
+                // Подпись пиковой частоты
+                spectrumCtx.fillStyle = '#fbbf24';
+                spectrumCtx.font = 'bold 14px monospace';
+                spectrumCtx.textAlign = 'center';
+                spectrumCtx.fillText(`Пик: ${Math.round(peakFrequency)} Гц`, peakX, 20);
+            }
+            
+            // Рисуем спектрограмму
+            drawSpectrogram();
+        }
+        
+        // Обработчики событий
+        startBtn.addEventListener('click', startAnalysis);
+        
+        stopBtn.addEventListener('click', () => {
+            stopAnalysis();
+            clearDisplay();
+        });
+        
+        clearBtn.addEventListener('click', clearDisplay);
+        
+        // Обновление истории спектрограммы
+        historySlider.addEventListener('input', function() {
+            maxHistorySeconds = parseInt(this.value);
+            historyValue.textContent = maxHistorySeconds;
+        });
+        
+        // Смена цветовой схемы
+        colorScheme1.addEventListener('click', function() {
+            currentColorScheme = 1;
+            colorScheme1.classList.add('active');
+            colorScheme2.classList.remove('active');
+            colorScheme3.classList.remove('active');
+        });
+        
+        colorScheme2.addEventListener('click', function() {
+            currentColorScheme = 2;
+            colorScheme1.classList.remove('active');
+            colorScheme2.classList.add('active');
+            colorScheme3.classList.remove('active');
+        });
+        
+        colorScheme3.addEventListener('click', function() {
+            currentColorScheme = 3;
+            colorScheme1.classList.remove('active');
+            colorScheme2.classList.remove('active');
+            colorScheme3.classList.add('active');
+        });
+        
+        // Инициализация при загрузке
+        window.addEventListener('load', () => {
+            clearDisplay();
+            updateStatus(false);
+            historyValue.textContent = historySlider.value;
+        });
+        
+        // Обработка закрытия страницы
+        window.addEventListener('beforeunload', stopAnalysis);
+        
+        // Добавление поддержки касания для мобильных устройств
+        [startBtn, stopBtn, clearBtn].forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.click();
+            }, { passive: false });
+        });
+        
+        // Инициализация событий для кнопок цветовой схемы
+        [colorScheme1, colorScheme2, colorScheme3].forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.click();
+            }, { passive: false });
+        });
+    </script>
+</body>
+</html> minActiveF
