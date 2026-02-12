@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Генератор тона</title>
+    <title>Генератор тона с точной настройкой</title>
     <style>
         * {
             box-sizing: border-box;
@@ -27,7 +27,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             padding: 40px;
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             text-align: center;
         }
         
@@ -48,7 +48,7 @@
             border: 2px solid #4d7cfe;
             border-radius: 12px;
             padding: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
@@ -65,8 +65,115 @@
             margin-left: 5px;
         }
         
+        /* Стили для точной настройки */
+        .fine-tuning {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 2px solid #4d7cfe;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            max-width: 250px;
+        }
+        
+        .frequency-input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1.1rem;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .input-unit {
+            padding: 12px 15px;
+            background: #f0f5ff;
+            color: #4d7cfe;
+            font-weight: 600;
+            border-left: 2px solid #4d7cfe;
+        }
+        
+        .tuning-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .tuning-btn {
+            background: linear-gradient(135deg, #f0f5ff, #e6ecff);
+            color: #4d7cfe;
+            border: 2px solid #4d7cfe;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .tuning-btn:hover {
+            background: linear-gradient(135deg, #4d7cfe, #3a6ad9);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(77, 124, 254, 0.3);
+        }
+        
+        .tuning-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .tuning-btn.small {
+            padding: 8px 15px;
+            font-size: 1rem;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 15px 0;
+            border-top: 1px solid #e0e7ff;
+            border-bottom: 1px solid #e0e7ff;
+        }
+        
+        .preset-btn {
+            background: white;
+            color: #6a11cb;
+            border: 2px solid #6a11cb;
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .preset-btn:hover {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+        
         .slider-container {
-            margin: 40px 0;
+            margin: 30px 0;
         }
         
         .slider-label {
@@ -120,7 +227,7 @@
         }
         
         .button-container {
-            margin-top: 40px;
+            margin-top: 20px;
         }
         
         .control-btn {
@@ -187,6 +294,23 @@
                 font-size: 2.8rem;
             }
             
+            .fine-tuning {
+                flex-direction: column;
+            }
+            
+            .input-group {
+                max-width: 100%;
+            }
+            
+            .tuning-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .preset-buttons {
+                justify-content: center;
+            }
+            
             .control-btn {
                 padding: 15px 30px;
                 font-size: 1.1rem;
@@ -197,19 +321,41 @@
 <body>
     <div class="container">
         <h1>Генератор тона</h1>
-        <p class="subtitle">Регулируемая частота звука</p>
+        <p class="subtitle">Регулируемая частота звука с точной настройкой</p>
         
         <div class="frequency-display">
             <div class="frequency-value" id="frequencyValue">440</div>
             <span class="frequency-unit">Гц</span>
         </div>
         
+        <!-- Точная настройка частоты -->
+        <div class="fine-tuning">
+            <div class="input-group">
+                <input type="number" id="exactFrequency" class="frequency-input" value="440" min="20" max="20000" step="1">
+                <span class="input-unit">Гц</span>
+            </div>
+            <div class="tuning-buttons">
+                <button class="tuning-btn" id="decreaseFreqBtn" title="Уменьшить на 1000 Гц">-1000</button>
+                <button class="tuning-btn" id="increaseFreqBtn" title="Увеличить на 1000 Гц">+1000</button>
+            </div>
+        </div>
+        
+        <!-- Быстрые предустановки частот -->
+        <div class="preset-buttons">
+            <button class="preset-btn" data-freq="100">100 Гц</button>
+            <button class="preset-btn" data-freq="440">440 Гц</button>
+            <button class="preset-btn" data-freq="1000">1 кГц</button>
+            <button class="preset-btn" data-freq="5000">5 кГц</button>
+            <button class="preset-btn" data-freq="10000">10 кГц</button>
+            <button class="preset-btn" data-freq="15000">15 кГц</button>
+        </div>
+        
         <div class="slider-container">
             <div class="slider-label">
-                <span>Низкая частота</span>
-                <span>Высокая частота</span>
+                <span>20 Гц</span>
+                <span>20 000 Гц</span>
             </div>
-            <input type="range" min="50" max="2000" value="440" class="slider" id="frequencySlider">
+            <input type="range" min="20" max="20000" value="440" class="slider" id="frequencySlider">
         </div>
         
         <div class="button-container">
@@ -219,7 +365,8 @@
         <div class="status" id="status">Готов к работе</div>
         
         <div class="instructions">
-            <p>Используйте ползунок для регулировки частоты звука от 50 Гц до 2000 Гц</p>
+            <p>Используйте ползунок или поле ввода для регулировки частоты от 20 Гц до 20000 Гц</p>
+            <p>Кнопки ±1000 Гц для быстрой настройки, предустановки частот для быстрого выбора</p>
             <p>Кнопка запускает и останавливает генерацию звука</p>
         </div>
     </div>
@@ -233,8 +380,17 @@
         // Элементы DOM
         const frequencySlider = document.getElementById('frequencySlider');
         const frequencyValue = document.getElementById('frequencyValue');
+        const exactFrequency = document.getElementById('exactFrequency');
         const controlBtn = document.getElementById('controlBtn');
         const status = document.getElementById('status');
+        const increaseFreqBtn = document.getElementById('increaseFreqBtn');
+        const decreaseFreqBtn = document.getElementById('decreaseFreqBtn');
+        const presetBtns = document.querySelectorAll('.preset-btn');
+        
+        // Константы
+        const MIN_FREQ = 20;
+        const MAX_FREQ = 20000;
+        const STEP = 1000;
         
         // Инициализация аудиоконтекста при первом взаимодействии пользователя
         function initAudioContext() {
@@ -244,14 +400,40 @@
         }
         
         // Обновление отображения частоты
-        function updateFrequencyDisplay() {
-            frequencyValue.textContent = frequencySlider.value;
+        function updateFrequencyDisplay(freq) {
+            const freqValue = Math.round(freq);
+            frequencyValue.textContent = freqValue;
+            frequencySlider.value = freqValue;
+            exactFrequency.value = freqValue;
+        }
+        
+        // Проверка и корректировка частоты в пределах допустимого диапазона
+        function validateFrequency(freq) {
+            return Math.min(Math.max(freq, MIN_FREQ), MAX_FREQ);
+        }
+        
+        // Установка новой частоты
+        function setFrequency(newFreq) {
+            const validatedFreq = validateFrequency(newFreq);
+            updateFrequencyDisplay(validatedFreq);
+            
+            // Если звук воспроизводится, обновить частоту осциллятора
+            if (isPlaying && oscillator && audioContext) {
+                oscillator.frequency.setValueAtTime(validatedFreq, audioContext.currentTime);
+            }
+            
+            return validatedFreq;
         }
         
         // Создание и запуск осциллятора
         function startSound() {
             if (!audioContext) {
                 initAudioContext();
+            }
+            
+            // Возобновляем аудиоконтекст, если он в состоянии suspended
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
             }
             
             // Остановить предыдущий осциллятор, если он существует
@@ -262,7 +444,7 @@
             // Создать новый осциллятор
             oscillator = audioContext.createOscillator();
             oscillator.type = 'sine'; // Тип волны: sine, square, sawtooth, triangle
-            oscillator.frequency.setValueAtTime(frequencySlider.value, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(parseFloat(frequencySlider.value), audioContext.currentTime);
             
             // Подключить осциллятор к выходу
             oscillator.connect(audioContext.destination);
@@ -294,15 +476,59 @@
         
         // Обработчик изменения ползунка
         frequencySlider.addEventListener('input', function() {
-            updateFrequencyDisplay();
+            const freq = parseInt(this.value);
+            updateFrequencyDisplay(freq);
             
             // Если звук воспроизводится, обновить частоту осциллятора
-            if (isPlaying && oscillator) {
-                oscillator.frequency.setValueAtTime(frequencySlider.value, audioContext.currentTime);
+            if (isPlaying && oscillator && audioContext) {
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
             }
         });
         
-        // Обработчик клика по кнопке
+        // Обработчик изменения поля ввода частоты
+        exactFrequency.addEventListener('input', function() {
+            let freq = parseInt(this.value);
+            
+            // Проверка на валидность
+            if (isNaN(freq)) {
+                freq = 440;
+            }
+            
+            setFrequency(freq);
+        });
+        
+        // Обработчик потери фокуса полем ввода
+        exactFrequency.addEventListener('blur', function() {
+            let freq = parseInt(this.value);
+            
+            if (isNaN(freq)) {
+                freq = 440;
+            }
+            
+            setFrequency(freq);
+        });
+        
+        // Обработчик увеличения частоты на 1000 Гц
+        increaseFreqBtn.addEventListener('click', function() {
+            const currentFreq = parseFloat(frequencySlider.value);
+            setFrequency(currentFreq + STEP);
+        });
+        
+        // Обработчик уменьшения частоты на 1000 Гц
+        decreaseFreqBtn.addEventListener('click', function() {
+            const currentFreq = parseFloat(frequencySlider.value);
+            setFrequency(currentFreq - STEP);
+        });
+        
+        // Обработчики для кнопок предустановок
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const freq = parseInt(this.dataset.freq);
+                setFrequency(freq);
+            });
+        });
+        
+        // Обработчик клика по кнопке запуска/остановки
         controlBtn.addEventListener('click', function() {
             // Инициализировать аудиоконтекст при первом клике
             if (!audioContext) {
@@ -324,12 +550,11 @@
         });
         
         // Инициализация отображения частоты при загрузке
-        updateFrequencyDisplay();
+        updateFrequencyDisplay(440);
         
         // Добавим обработку касания для мобильных устройств
         controlBtn.addEventListener('touchstart', function(e) {
             e.preventDefault();
-            // Тот же код, что и для клика
             if (!audioContext) {
                 initAudioContext();
             }
@@ -340,6 +565,22 @@
                 startSound();
             }
         }, { passive: false });
+        
+        // Добавим обработку касания для кнопок настройки
+        [increaseFreqBtn, decreaseFreqBtn].forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.click();
+            }, { passive: false });
+        });
+        
+        // Добавим обработку касания для кнопок предустановок
+        presetBtns.forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                this.click();
+            }, { passive: false });
+        });
     </script>
 </body>
 </html>
